@@ -102,43 +102,40 @@ async function isPDFFile(file){
   } catch { return false; }
 }
 
-// ---- Dynamic pdf.js loader ----
-async function loadScriptOnce(url){
+
+// ---- Local pdf.js loader (no network) ----
+async function loadLocalScript(path){
   return new Promise((resolve, reject)=>{
     const tag = document.createElement('script');
-    tag.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+    tag.src = path + '?v=' + Date.now(); // bust any CDN/proxy cache
     tag.onload = ()=>resolve(true);
-    tag.onerror = ()=>reject(new Error('Failed to load ' + url));
+    tag.onerror = ()=>reject(new Error('Failed to load ' + path));
     document.head.appendChild(tag);
   });
 }
 
 async function ensurePDFJS(){
-  log('ensurePDFJS: start');
-  if (window.pdfjsLib && window.pdfjsLib.getDocument){ log('ensurePDFJS: already present'); return window.pdfjsLib; }
-  const cdns = [
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.js',
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.js'
-  ];
-  const workers = [
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js',
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.js'
-  ];
-  let lastErr = null;
-  for (let i=0;i<cdns.length;i++){
-    try{
-      log('Loading pdf.js from: ' + cdns[i]);
-      await loadScriptOnce(cdns[i]);
-      if (!window.pdfjsLib || !window.pdfjsLib.getDocument) throw new Error('pdf.js API missing');
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = workers[i] + '?v=' + Date.now();
-      log('pdf.js ready via ' + cdns[i]);
-      return window.pdfjsLib;
-    }catch(e){
-      lastErr = e; log('CDN load failed: ' + e.message);
-    }
+  log('ensurePDFJS: start (local)');
+  if (window.pdfjsLib && window.pdfjsLib.getDocument){
+    log('ensurePDFJS: already present (local)');
+    return window.pdfjsLib;
   }
-  throw new Error('pdf.js not loaded: ' + (lastErr ? lastErr.message : 'unknown'));
+  const core = './lib/pdf.min.js';
+  const worker = './lib/pdf.worker.min.js';
+  try{
+    await loadLocalScript(core);
+    if (!window.pdfjsLib || !window.pdfjsLib.getDocument){
+      throw new Error('pdf.js API missing after local load');
+    }
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = worker + '?v=' + Date.now();
+    log('pdf.js ready (local)');
+    return window.pdfjsLib;
+  }catch(e){
+    log('Local pdf.js load failed: ' + e.message + '. Make sure files exist at ./lib/pdf.min.js and ./lib/pdf.worker.min.js');
+    throw e;
+  }
 }
+
 
 // ---- Renderers ----
 async function drawImageToCanvas(url){
