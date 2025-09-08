@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Blueprint Cleaner — PWA (Offline)</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b0c0f"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- pdf.js for PDF rendering (cached by service worker after first load) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.js?v=11" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js?v=11" defer></script>
+
+</head>
+<body>
+  <header>
+    <h1>Blueprint Cleaner — Offline</h1>
+    <p style="margin:6px 0 0;color:#ffb454;font-weight:600">build15 — 2025-09-08 01:28:11 (Repo-ready / No Service Worker)</p>
+    <p class="tagline">100% offline from first launch. (This build supports images; PDF/OCR will be added with local libs.)</p>
+  <div style="height:6px;background:#ff4d4f;margin:8px auto 0;max-width:1180px;border-radius:4px"></div>
+</header>
+
+  <section class="controls">
+    <div class="row">
+      <label class="file">
+        <input type="file" id="fileInput" accept=".pdf,image/*"/>
+        <span>Open scanned image (PNG/JPG)</span>
+      </label>
+      <button id="zoomFit" disabled>Zoom to Fit</button>
+      <button id="zoom100" disabled>100%</button>
+      <button id="downloadPNG" disabled>Save PNG</button>
+    </div>
+
+<div class="row" style="justify-content:center; color:#ffb454">
+  <strong>PDF note:</strong>&nbsp;This offline build supports images now. Fully offline PDF support will be added next.
+</div>
+
+
+    <details open>
+      <summary>Auto-clean settings</summary>
+      <div class="grid">
+        <label>Mode
+          <select id="mode">
+            <option value="clean_text">Remove text/notes (keep thick lines)</option>
+            <option value="clean_dims">Remove thin dimension lines</option>
+            <option value="walls_only">Emphasize walls (thicken lines)</option>
+          </select>
+        </label>
+        <label>Line size threshold
+          <input id="lineThresh" type="range" min="1" max="15" step="1" value="5"/>
+        </label>
+        <label>Noise size threshold (px area)
+          <input id="areaThresh" type="range" min="5" max="800" step="5" value="120"/>
+        </label>
+        <button id="runClean" disabled>Run Auto-Clean</button>
+        <button id="retraceLines" disabled>Retrace Walls</button>
+        <button id="resetImg" disabled>Reset Image</button>
+      </div>
+    </details>
+
+    <details>
+      <summary>Manual tools</summary>
+      <div class="row">
+        <button id="brushErase" class="toggle" disabled>Erase</button>
+        <button id="brushRestore" class="toggle" disabled>Restore</button>
+        <label>Brush size
+          <input id="brushSize" type="range" min="5" max="80" step="1" value="20"/>
+        </label>
+        <button id="undo" disabled>Undo</button>
+        <button id="redo" disabled>Redo</button>
+      </div>
+    </details>
+  </section>
+
+  <main>
+    <div id="statusLog" aria-live="polite">Ready.</div>
+    <button id="toggleLog" style="position:fixed;right:12px;bottom:62px;background:#0f131b;border:1px solid #1e2633;border-radius:8px;color:#cfe3ff;padding:6px 10px;z-index:9999">Hide Log</button>
+    <div class="canvases">
+      <canvas id="view" width="1200" height="800"></canvas>
+      <canvas id="overlay" width="1200" height="800"></canvas>
+    </div>
+    <aside class="help">
+      <h3>Tips</h3>
+      <ul>
+        <li>Scan/export blueprints as high-res images for this offline build.</li>
+        <li>Use <b>Remove thin dimension lines</b> first; then try <b>Remove text/notes</b>.</li>
+        <li>Touch up with <b>Erase</b>/<b>Restore</b>, then save as PNG.</li>
+      </ul>
+    </aside>
+  </main>
+
+  <footer>
+    <small>build15 — 2025-09-08 01:28:11 (Repo-ready / No Service Worker). PDF/OCR to follow with locally bundled libraries.</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
