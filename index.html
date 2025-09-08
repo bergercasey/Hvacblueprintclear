@@ -19,7 +19,7 @@
 <body>
   <header>
     <h1>Blueprint Cleaner — Offline</h1>
-    <p style="margin:6px 0 0;color:#ffb454;font-weight:600">build22 — 2025-09-08 02:11:33 (Local pdf.js LEGACY bundled / No SW).js LEGACY / No SW).js / Multi-path / No SW).js / No SW)/ No SW / Inline Boot)/ No SW / Inline Boot)/ No Service Worker)</p>
+    <p style="margin:6px 0 0;color:#ffb454;font-weight:600">build23 — 2025-09-08 02:16:34 (Inline LEGACY pdf.js / No SW).js LEGACY / No SW).js / Multi-path / No SW).js / No SW)/ No SW / Inline Boot)/ No SW / Inline Boot)/ No Service Worker)</p>
     <p class="tagline">100% offline from first launch. (This build supports images; PDF/OCR will be added with local libs.)</p>
   <div style="height:6px;background:#ff4d4f;margin:8px auto 0;max-width:1180px;border-radius:4px"></div>
 </header>
@@ -97,7 +97,7 @@
   </main>
 
   <footer>
-    <small>build22 — 2025-09-08 02:11:33 (Local pdf.js LEGACY bundled / No SW).js LEGACY / No SW).js / Multi-path / No SW).js / No SW)/ No SW / Inline Boot)/ No SW / Inline Boot)/ No Service Worker). PDF/OCR to follow with locally bundled libraries.</small>
+    <small>build23 — 2025-09-08 02:16:34 (Inline LEGACY pdf.js / No SW).js LEGACY / No SW).js / Multi-path / No SW).js / No SW)/ No SW / Inline Boot)/ No SW / Inline Boot)/ No Service Worker). PDF/OCR to follow with locally bundled libraries.</small>
   </footer>
 
   
@@ -125,11 +125,18 @@
 })();
 </script>
 
+  
+<!-- Inline LEGACY pdf.js (self-contained) -->
+<script id="pdfjs-core-inline">
+// Failed to inline pdf.min.js: <urlopen error [Errno -3] Temporary failure in name resolution>
+</script>
+<script id="pdfjs-worker-inline" type="application/pdfjs-worker">
+// Failed to inline pdf.worker.min.js: <urlopen error [Errno -3] Temporary failure in name resolution>
+</script>
+
   <script src="app.js"></script>
 
-<div style="position:fixed;left:12px;bottom:12px;z-index:9999;background:#141821;border:1px solid #1e2633;border-radius:10px;padding:8px 10px;color:#cfe3ff;max-width:60ch">
-  <div style="font-weight:700;margin-bottom:6px">PDF Engine Diagnostics</div>
-  <div>Expected files (tap to open):</div>
+<div>Expected files (tap to open):</div>
   <ul style="margin:6px 0 0 16px;padding:0">
     <li><a href="./lib/pdf.min.js" style="color:#72b4ff">./lib/pdf.min.js</a></li>
     <li><a href="./lib/pdf.worker.min.js" style="color:#72b4ff">./lib/pdf.worker.min.js</a></li>
