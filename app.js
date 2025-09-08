@@ -104,40 +104,49 @@ async function isPDFFile(file){
 
 
 
-// ---- Local pdf.js loader with multi-path attempts ----
-async function probe(url){
+
+// ---- Local pdf.js LEGACY loader with multi-path attempts ----
+async function probeWithSize(url){
   try{
     const res = await fetch(url + (url.includes('?')?'&':'?') + 'v=' + Date.now(), { method:'GET' });
-    return res.ok;
-  }catch{ return false; }
+    if (!res.ok) return { ok:false, size:0 };
+    const buf = await res.arrayBuffer();
+    return { ok:true, size: buf.byteLength };
+  }catch{ return { ok:false, size:0 }; }
 }
 
-function pathCandidates(){
+function pathCandidatesLegacy(){
   const base = window.location.pathname.replace(/\/[^\/]*$/, '');
-  const candidates = [
+  const core = [
+    base + '/lib/legacy/pdf.min.js',
+    './lib/legacy/pdf.min.js',
+    '/lib/legacy/pdf.min.js',
     base + '/lib/pdf.min.js',
     './lib/pdf.min.js',
     '/lib/pdf.min.js'
   ];
-  const workerCandidates = [
+  const worker = [
+    base + '/lib/legacy/pdf.worker.min.js',
+    './lib/legacy/pdf.worker.min.js',
+    '/lib/legacy/pdf.worker.min.js',
     base + '/lib/pdf.worker.min.js',
     './lib/pdf.worker.min.js',
     '/lib/pdf.worker.min.js'
   ];
-  return { candidates, workerCandidates };
+  return { core, worker };
 }
 
 async function ensurePDFJS(){
-  log('ensurePDFJS: start (local multipath)');
+  log('ensurePDFJS: start (local legacy multipath)');
   if (window.pdfjsLib && window.pdfjsLib.getDocument){ log('ensurePDFJS: already present'); return window.pdfjsLib; }
-  const { candidates, workerCandidates } = pathCandidates();
-  let corePath = null, workerPath = null;
-  for (const u of candidates){ if (await probe(u)) { corePath = u; break; } }
-  for (const u of workerCandidates){ if (await probe(u)) { workerPath = u; break; } }
-  log('Core path: ' + (corePath || '(not found)'));
-  log('Worker path: ' + (workerPath || '(not found)'));
+  const { core, worker } = pathCandidatesLegacy();
+  let corePath=null, workerPath=null, coreSize=0, workerSize=0;
+  for (const u of core){ const r = await probeWithSize(u); if (r.ok && r.size>50000){ corePath=u; coreSize=r.size; break; } }
+  for (const u of worker){ const r = await probeWithSize(u); if (r.ok && r.size>50000){ workerPath=u; workerSize=r.size; break; } }
+  log('Core path: ' + (corePath||'(not found)') + ' size=' + coreSize);
+  log('Worker path: ' + (workerPath||'(not found)') + ' size=' + workerSize);
   if (!corePath || !workerPath){
-    throw new Error('Local pdf.js not found. Make sure both files exist under /lib/. Tried relative to: ' + window.location.pathname);
+    throw new Error('Local pdf.js (LEGACY) not found. Place files under /lib/legacy/. See README for filenames.');
   }
   await new Promise((resolve, reject)=>{
     const s = document.createElement('script');
@@ -147,26 +156,24 @@ async function ensurePDFJS(){
     document.head.appendChild(s);
   });
   if (!window.pdfjsLib || !window.pdfjsLib.getDocument){
-    throw new Error('pdf.js API missing after load: ' + corePath);
+    throw new Error('pdf.js API missing after load (need LEGACY build).');
   }
   window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath + (workerPath.includes('?')?'&':'?') + 'v=' + Date.now();
-  log('pdf.js ready (local multipath)');
+  log('pdf.js ready (local LEGACY)');
   return window.pdfjsLib;
 }
 
-// Diagnostics UI
+// Diagnostics UI update to show sizes
 const libBtn = document.getElementById('checkLibBtn');
 const libStatus = document.getElementById('libStatus');
 if (libBtn && libStatus){
   libBtn.addEventListener('click', async () => {
-    const { candidates, workerCandidates } = pathCandidates();
+    const { core, worker } = pathCandidatesLegacy();
     let lines = [];
-    for (const u of candidates){
-      try{ const ok = await probe(u); lines.push((ok?'✅ ':'❌ ') + u); }catch{ lines.push('❌ ' + u); }
-    }
-    for (const u of workerCandidates){
-      try{ const ok = await probe(u); lines.push((ok?'✅ ':'❌ ') + u); }catch{ lines.push('❌ ' + u); }
-    }
+    lines.push('Core candidates:');
+    for (const u of core){ const r = await probeWithSize(u); lines.push((r.ok?'✅ ':'❌ ') + u + (r.ok?(' ('+r.size+' bytes)'):'')); }
+    lines.push('Worker candidates:');
+    for (const u of worker){ const r = await probeWithSize(u); lines.push((r.ok?'✅ ':'❌ ') + u + (r.ok?(' ('+r.size+' bytes)'):'')); }
     libStatus.textContent = lines.join(' | ');
   });
 }

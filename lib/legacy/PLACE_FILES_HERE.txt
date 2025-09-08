@@ -1,0 +1,4 @@
+Place legacy pdf.js files here:
+ - pdf.min.js
+ - pdf.worker.min.js
+(From pdfjs-dist@4.7.76 legacy build)

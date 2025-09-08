@@ -1,0 +1,4 @@
+Place pdf.min.js and pdf.worker.min.js in this folder.
+Expected names:
+ - pdf.min.js
+ - pdf.worker.min.js
