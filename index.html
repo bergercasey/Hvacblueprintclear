@@ -19,7 +19,7 @@
 <body>
   <header>
     <h1>Blueprint Cleaner — Offline</h1>
-    <p style="margin:6px 0 0;color:#ffb454;font-weight:600">build15 — 2025-09-08 01:28:11 (Repo-ready / No Service Worker)</p>
+    <p style="margin:6px 0 0;color:#ffb454;font-weight:600">build16 — 2025-09-08 01:38:55 (Repo-ready / No SW / Inline Boot)/ No Service Worker)</p>
     <p class="tagline">100% offline from first launch. (This build supports images; PDF/OCR will be added with local libs.)</p>
   <div style="height:6px;background:#ff4d4f;margin:8px auto 0;max-width:1180px;border-radius:4px"></div>
 </header>
@@ -78,6 +78,9 @@
 
   <main>
     <div id="statusLog" aria-live="polite">Ready.</div>
+    <div style="position:fixed;right:12px;bottom:104px;display:flex;gap:8px;z-index:9999">
+      <button id="selfTestBtn" style="background:#0f131b;border:1px solid #1e2633;border-radius:8px;color:#cfe3ff;padding:6px 10px">Self Test</button>
+    </div>
     <button id="toggleLog" style="position:fixed;right:12px;bottom:62px;background:#0f131b;border:1px solid #1e2633;border-radius:8px;color:#cfe3ff;padding:6px 10px;z-index:9999">Hide Log</button>
     <div class="canvases">
       <canvas id="view" width="1200" height="800"></canvas>
@@ -94,8 +97,33 @@
   </main>
 
   <footer>
-    <small>build15 — 2025-09-08 01:28:11 (Repo-ready / No Service Worker). PDF/OCR to follow with locally bundled libraries.</small>
+    <small>build16 — 2025-09-08 01:38:55 (Repo-ready / No SW / Inline Boot)/ No Service Worker). PDF/OCR to follow with locally bundled libraries.</small>
   </footer>
+
+  
+<script>
+(function(){
+  var logEl = document.getElementById('statusLog');
+  function blog(m){ if(logEl){ logEl.textContent = String(m); } console.log('[BOOT]', m); }
+  window.addEventListener('error', function(e){
+    blog('JS error: ' + (e && e.message ? e.message : e));
+  });
+  blog('Boot OK (build16 inline).');
+  // wire self-test
+  var btn = document.getElementById('selfTestBtn');
+  if(btn){
+    btn.addEventListener('click', function(){
+      try{
+        var c = document.getElementById('view'); var ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height);
+        ctx.fillStyle = '#000'; ctx.fillRect(10,10,180,80);
+        ctx.fillStyle = '#fff'; ctx.font = '20px sans-serif'; ctx.fillText('Self Test OK', 20, 60);
+        blog('Self Test drew to canvas.');
+      }catch(err){ blog('Self Test error: ' + err); }
+    });
+  }
+})();
+</script>
 
   <script src="app.js"></script>
 </body>
