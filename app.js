@@ -103,37 +103,72 @@ async function isPDFFile(file){
 }
 
 
-// ---- Local pdf.js loader (no network) ----
-async function loadLocalScript(path){
-  return new Promise((resolve, reject)=>{
-    const tag = document.createElement('script');
-    tag.src = path + '?v=' + Date.now(); // bust any CDN/proxy cache
-    tag.onload = ()=>resolve(true);
-    tag.onerror = ()=>reject(new Error('Failed to load ' + path));
-    document.head.appendChild(tag);
-  });
+
+// ---- Local pdf.js loader with multi-path attempts ----
+async function probe(url){
+  try{
+    const res = await fetch(url + (url.includes('?')?'&':'?') + 'v=' + Date.now(), { method:'GET' });
+    return res.ok;
+  }catch{ return false; }
+}
+
+function pathCandidates(){
+  const base = window.location.pathname.replace(/\/[^\/]*$/, '');
+  const candidates = [
+    base + '/lib/pdf.min.js',
+    './lib/pdf.min.js',
+    '/lib/pdf.min.js'
+  ];
+  const workerCandidates = [
+    base + '/lib/pdf.worker.min.js',
+    './lib/pdf.worker.min.js',
+    '/lib/pdf.worker.min.js'
+  ];
+  return { candidates, workerCandidates };
 }
 
 async function ensurePDFJS(){
-  log('ensurePDFJS: start (local)');
-  if (window.pdfjsLib && window.pdfjsLib.getDocument){
-    log('ensurePDFJS: already present (local)');
-    return window.pdfjsLib;
+  log('ensurePDFJS: start (local multipath)');
+  if (window.pdfjsLib && window.pdfjsLib.getDocument){ log('ensurePDFJS: already present'); return window.pdfjsLib; }
+  const { candidates, workerCandidates } = pathCandidates();
+  let corePath = null, workerPath = null;
+  for (const u of candidates){ if (await probe(u)) { corePath = u; break; } }
+  for (const u of workerCandidates){ if (await probe(u)) { workerPath = u; break; } }
+  log('Core path: ' + (corePath || '(not found)'));
+  log('Worker path: ' + (workerPath || '(not found)'));
+  if (!corePath || !workerPath){
+    throw new Error('Local pdf.js not found. Make sure both files exist under /lib/. Tried relative to: ' + window.location.pathname);
   }
-  const core = './lib/pdf.min.js';
-  const worker = './lib/pdf.worker.min.js';
-  try{
-    await loadLocalScript(core);
-    if (!window.pdfjsLib || !window.pdfjsLib.getDocument){
-      throw new Error('pdf.js API missing after local load');
+  await new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = corePath + (corePath.includes('?')?'&':'?') + 'v=' + Date.now();
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('Failed to load ' + corePath));
+    document.head.appendChild(s);
+  });
+  if (!window.pdfjsLib || !window.pdfjsLib.getDocument){
+    throw new Error('pdf.js API missing after load: ' + corePath);
+  }
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath + (workerPath.includes('?')?'&':'?') + 'v=' + Date.now();
+  log('pdf.js ready (local multipath)');
+  return window.pdfjsLib;
+}
+
+// Diagnostics UI
+const libBtn = document.getElementById('checkLibBtn');
+const libStatus = document.getElementById('libStatus');
+if (libBtn && libStatus){
+  libBtn.addEventListener('click', async () => {
+    const { candidates, workerCandidates } = pathCandidates();
+    let lines = [];
+    for (const u of candidates){
+      try{ const ok = await probe(u); lines.push((ok?'✅ ':'❌ ') + u); }catch{ lines.push('❌ ' + u); }
     }
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = worker + '?v=' + Date.now();
-    log('pdf.js ready (local)');
-    return window.pdfjsLib;
-  }catch(e){
-    log('Local pdf.js load failed: ' + e.message + '. Make sure files exist at ./lib/pdf.min.js and ./lib/pdf.worker.min.js');
-    throw e;
-  }
+    for (const u of workerCandidates){
+      try{ const ok = await probe(u); lines.push((ok?'✅ ':'❌ ') + u); }catch{ lines.push('❌ ' + u); }
+    }
+    libStatus.textContent = lines.join(' | ');
+  });
 }
 
 
